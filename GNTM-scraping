@@ -1,0 +1,152 @@
+
+# Librerías
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+import time
+import re
+import ast
+import pandas as pd
+from bs4 import BeautifulSoup
+
+# Opciones de navegación
+options =  webdriver.ChromeOptions()
+options.add_argument('--start-maximized')
+options.add_argument('--disable-extensions')
+
+driver_path = r'C:\Users\Johan.jaramillo\Engineering\chromedriver.exe'
+
+driver = webdriver.Chrome(driver_path, chrome_options=options)
+
+# Iniciarla en la pantalla 2
+driver.set_window_position(2000, 0)
+driver.maximize_window()
+time.sleep(1)
+
+# Inicializamos el navegador
+driver.get('http://pub.vueling.com/Vueling.SSO.WebUI/Home/Login?ReturnSite=http%3a%2f%2fprv.vueling.com%2fVueling.GNMT.WebUI&ReturnUrl=%2f&ResourceId=activeDirectory')
+
+# Introducimos datos del User
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'input#Usuario')))\
+    .send_keys('johan.jaramillo')
+
+# Introducimos datos del Password
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'input#Password')))\
+    .send_keys('Vueling40')
+
+# Clicamos en "Submit"
+
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'button.btn.btn-vueling.btn-login')))\
+    .click()
+
+# Clicamos en en "+NEW"
+
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.XPATH,
+                                      '/html/body/div[2]/nav/div/div/ul/li[1]/a')))\
+    .click()
+
+# Después de abrirse el desplegable, clicamos en en "Purchase Order"
+
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.XPATH,
+                                      '/html/body/div[2]/nav/div/div/ul/li[1]/ul/li[2]/a')))\
+    .click()
+
+# damos un tiempo al navegador para que cargue, para estar seguros le damos 3 segundos
+time.sleep(3)
+
+# Clicamos en el botón para abrir el desplegable de Proveedores
+
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'span.t-icon.t-arrow-down')))\
+    .click()
+
+proveedores = driver.find_element(By.XPATH, "/html/body/div[5]/div/div/div[2]/div/div[6]/div[1]/div/div[1]/div/div/div/div[1]/div[3]/div/script").get_attribute('outerHTML')
+zbc = driver.find_element(By.CSS_SELECTOR, "select.form-control.ZBCodeDDL").get_attribute('outerHTML')
+
+
+
+
+time.sleep(3)
+
+# Convierto el tocho str de proveedores a Pandas Dataframe
+
+start = proveedores.find('data:')
+end = proveedores.rfind(', dropDownAttr:')
+
+datos = proveedores[start:end]
+
+string_search = re.search('\[.+\]', datos, re.IGNORECASE)
+
+if string_search:
+    datos_lista = string_search.group(0)
+
+long2 = datos_lista.replace('\"Value\":', '\"Value\"%').replace('{\"Text\":',
+                                                                       '{\"Text\"%').replace('\"',
+                                                                                             '').replace(':',
+                                                                                                         '').replace('%', ':').replace('Text:','\"Text\":').replace('Value:','\"Value\":').replace(':',':\"').replace(',\"Value\"','\",\"Value\"').replace('},', '\"},')
+
+long3 = long2.replace('\\', '').replace('\\', '').replace('[', '').replace('}]', '\"}').replace(',{',',{{' ).replace('},','}},' ).split('},{')
+
+
+prov_lista_dics =  [ast.literal_eval(dic) for dic in long3]
+
+prov_df = pd.DataFrame(prov_lista_dics)
+
+# Convierto el tocho str de zbc a Pandas Dataframe
+soup = BeautifulSoup(zbc, 'html.parser')
+zbc_list = list()
+for link in soup.find_all('option'):
+    zbc_list.append(link.text)
+
+zbc_list = zbc_list[1:]
+zbc_df = pd.DataFrame({'ZBC': zbc_list})
+
+print(zbc_df)
+
+
+#print(proveedores)
+"""
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'button.didomi-components-button didomi-button didomi-dismiss-button didomi-components-button--color didomi-button-highlight highlight-button'.replace(' ', '.'))))\
+    .click()
+
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'input#term')))\
+    .send_keys('Madrid')
+time.sleep(1)
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'i.icon.icon-sm.icon-search')))\
+    .click()
+time.sleep(1)
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'i.icon_weather_s.icon.icon-sm.icon-city')))\
+    .click()
+
+time.sleep(1)
+
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.XPATH,
+                                      '/html/body/div[5]/div[1]/div[4]/div/section[4]/section/div/article/section/ul[1]/li[2]/h2/a')))\
+    .click()
+
+time.sleep(1)
+WebDriverWait(driver, 5) \
+    .until(EC.element_to_be_clickable((By.XPATH,
+                                       '/html/body/div[5]/div[1]/div[4]/div/section[4]/section/div[1]/ul')))
+
+time.sleep(1)
+"""
