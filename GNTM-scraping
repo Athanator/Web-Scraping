@@ -10,6 +10,7 @@ import ast
 import pandas as pd
 from bs4 import BeautifulSoup
 
+begin_time = time.time()
 # Opciones de navegación
 options =  webdriver.ChromeOptions()
 options.add_argument('--start-maximized')
@@ -37,7 +38,7 @@ WebDriverWait(driver, 5)\
 WebDriverWait(driver, 5)\
     .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
                                       'input#Password')))\
-    .send_keys('Vueling40')
+    .send_keys('CONNNNNNNNNNNNNNNNNTRAAAAAAAAAAAAAAAAAAAAAASEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEÑAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
 
 # Clicamos en "Submit"
 
@@ -73,8 +74,25 @@ WebDriverWait(driver, 5)\
 proveedores = driver.find_element(By.XPATH, "/html/body/div[5]/div/div/div[2]/div/div[6]/div[1]/div/div[1]/div/div/div/div[1]/div[3]/div/script").get_attribute('outerHTML')
 zbc = driver.find_element(By.CSS_SELECTOR, "select.form-control.ZBCodeDDL").get_attribute('outerHTML')
 
+"""
+#####################################################################################################################################
+WebDriverWait(driver, 5)\
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                      'select.form-control.ZBCodeDDL')))\
+    .send_keys('320GNMT0170-2022-LM NO IAG O&A Q4')
 
-
+time.sleep(1)
+listita = list()
+account = driver.find_element(By.CSS_SELECTOR, "input#Account").get_attribute('value')
+listita.append(account)
+material = driver.find_element(By.CSS_SELECTOR, "input#Material").get_attribute('value')
+listita.append(material)
+purchasing_group = driver.find_element(By.CSS_SELECTOR, "input#PurchasingGroup").get_attribute('value')
+listita.append(purchasing_group)
+initial_balance = driver.find_element(By.CSS_SELECTOR, "input#InitialBalance").get_attribute('value')
+listita.append(float(initial_balance.replace('.','').replace(',','.')))
+#####################################################################################################################################
+"""
 
 time.sleep(3)
 
@@ -111,7 +129,50 @@ for link in soup.find_all('option'):
 zbc_list = zbc_list[1:]
 zbc_df = pd.DataFrame({'ZBC': zbc_list})
 
-print(zbc_df)
+# Ahora cogemos los datos de cada zbc
+
+# hago click en el primer item asiladamente para que luego en el for loop no se quede atascado
+WebDriverWait(driver, 5) \
+        .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                           'select.form-control.ZBCodeDDL'))) \
+        .send_keys(zbc_list[0])
+time.sleep(1)
+
+account = list()
+material = list()
+purchasing_group = list()
+initial_balance = list()
+
+
+for zbc_item in zbc_list:
+    WebDriverWait(driver, 5) \
+        .until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                           'select.form-control.ZBCodeDDL'))) \
+        .send_keys(zbc_item)
+    time.sleep(1)
+
+    account.append(driver.find_element(By.CSS_SELECTOR, "input#Account").get_attribute('value'))
+
+    material.append(driver.find_element(By.CSS_SELECTOR, "input#Material").get_attribute('value'))
+
+    purchasing_group.append(driver.find_element(By.CSS_SELECTOR, "input#PurchasingGroup").get_attribute('value'))
+
+    initial_balance.append(float(driver.find_element(By.CSS_SELECTOR, "input#InitialBalance").get_attribute('value').replace('.','').replace(',','.')))
+
+df_full_zbc = pd.DataFrame({'zbc': zbc_list, 'account': account, 'material': material, 'purchasing_group': purchasing_group, 'initial_balance': initial_balance})
+
+# Write dataframes to excel
+prov_df.to_excel(r'C:\Users\Johan.jaramillo\Desktop\df_prov.xlsx')
+df_full_zbc.to_excel(r'C:\Users\Johan.jaramillo\Desktop\df_full_zbc.xlsx')
+
+
+
+end_time = time.time()
+
+total_time = (end_time - begin_time)/60
+
+print(f'Total Processing time is: {total_time} minutes')
+
 
 
 #print(proveedores)
